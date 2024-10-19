@@ -57,9 +57,6 @@ class FlanTask(enum.Enum):
 
 FlanCollectionStatistics = dict[FlanTask, int]
 
-# FlanCollectionTasks = [FlanTask.COT, FlanTask.DIALOG, FlanTask.FLAN2021, FlanTask.NIV2, FlanTask.T0]
-
-
 LAFAND_FR_PIVOT_LANGUAGES: Final = frozenset([])
 LAFAND_EN_PIVOT_LANGUAGES: Final = frozenset([
     "hau", "pcm", "swa", "ibo", "yor", "zul", "tsn", "twi", # TODO: @theyorubayesian: Include xho, zul
@@ -72,6 +69,8 @@ MASAKHANEWS_LANGUAGES: Final = frozenset([
     "pcm", "run", "sna", "som", 
     "swa", "tir", "xho", "yor"
 ])
+
+OCTOPACK_LANGUAGES: Final = frozenset(["en", "fr", "pt-BR"])
 
 WURA_LANGUAGES: Final = frozenset([ 
     "afr", "amh", "arz", "eng", 

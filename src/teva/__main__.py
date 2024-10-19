@@ -10,6 +10,9 @@ import jax
 import seqio
 import tensorflow as tf
 
+from dotenv import load_dotenv
+load_dotenv()
+
 from t5x import config_utils
 from t5x import gin_utils
 

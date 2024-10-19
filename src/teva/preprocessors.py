@@ -10,13 +10,15 @@ JsonSpec = Dict[str, Union[tf.TensorSpec, "JsonSpec"]]
 
 
 class AfriQAInput(TypedDict):
+    AnswerPivot = TypedDict("answer_pivot", {"text": list[str], "answer_start": list[int]})
+
     id: str
     title: str
     context: str
     question_lang: set
     question_translated: str
     answer_lang: str
-    answer_pivot: TypedDict("answer_pivot", {"text": list[str], "answer_start": list[int]})
+    answer_pivot: AnswerPivot
 
 
 class ClassificationInput(TypedDict):
@@ -27,11 +29,13 @@ class ClassificationInput(TypedDict):
 
 
 class SQuADInput(TypedDict):
+    AnswerDict = TypedDict("answers", {"text": List[str], "answer_start": List[int]})
+
     id: str
     title: str
     context: str
     question: str
-    answers: TypedDict("answers", {"text": List[str], "answer_start": List[int]})
+    answers: AnswerDict
 
 
 class TTTExample(TypedDict):
