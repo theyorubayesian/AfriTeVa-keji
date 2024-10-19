@@ -11,7 +11,8 @@ requires-python = ">=3.8"
 dependencies = [
   'python-dotenv',
   't5',
-  'tensorflow_io'
+  'tensorflow_io',
+  'pycountry'
 ]
 
 dynamic = [

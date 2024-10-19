@@ -1,11 +1,9 @@
-import copy
-import enum
 import json
 import os
 from dataclasses import asdict
 from functools import partial
 from string import Template
-from typing import Final, Literal, Optional, Sequence
+from typing import Final, Literal, Optional, Sequence, Union
 
 import gin
 import seqio
@@ -441,6 +439,7 @@ def create_aya_dataset_mixture(
     languages: Sequence[str],
     dataset_name: str,
     suffix: Optional[str] = None,
+    default_mixture_rate_cfg = MixtureRateConfig(),
     **mixture_rate_cfg_map: MixtureRateConfig
 ) -> Optional[seqio.Mixture]:
     prefix = [dataset_name, suffix][bool(suffix)]
@@ -502,7 +501,7 @@ def create_aya_dataset_mixture(
             )
 
         mixture_rate_cfg = mixture_rate_cfg_map.get(
-            f"{normalize(dataset_name)}_mixture_cfg", MixtureRateConfig())
+            f"{language}_mixture_cfg", default_mixture_rate_cfg)
         mixture_rate = get_rate(task_name, **asdict(mixture_rate_cfg))
 
         aya_tasks.append((task_name, mixture_rate))
@@ -518,9 +517,12 @@ def create_aya_dataset_mixture(
 
 
 @gin.register
-def add_aya_human_task(languages: Sequence[str] = AYA_HUMAN_LANGUAGES) -> seqio.Mixture:
+def add_aya_human_task(
+    languages: Sequence[str] = AYA_HUMAN_LANGUAGES,
+    mixture_fn: callable = create_aya_dataset_mixture
+) -> seqio.Mixture:
     assert AYA_HUMAN_LANGUAGES.issuperset(languages)
-    aya_human_mixture = create_aya_dataset_mixture(
+    aya_human_mixture = mixture_fn(
         languages, "aya-dataset", mixture_rate=rate_num_examples, suffix="human")
     return aya_human_mixture
 
@@ -528,13 +530,14 @@ def add_aya_human_task(languages: Sequence[str] = AYA_HUMAN_LANGUAGES) -> seqio.
 @gin.register
 def add_aya_translated_task(
     datasets: Sequence[str] = AYA_TEMPLATED_DATASETS,
+    mixture_fn: callable = create_aya_dataset_mixture,
     **mixture_rate_cfg_map: MixtureRateConfig
 ) -> seqio.Mixture:
     assert AYA_TEMPLATED_DATASETS.issuperset(datasets)
     sub_mixtures = []
     
     for dataset_name in datasets:
-        mixture = create_aya_dataset_mixture(
+        mixture = mixture_fn(
             AYA_LANGUAGES,
             dataset_name=dataset_name,
             mixture_rate=rate_num_examples
@@ -555,13 +558,14 @@ def add_aya_translated_task(
 @gin.register
 def add_aya_templated_task(
     datasets: Sequence[str] = AYA_TEMPLATED_DATASETS,
+    mixture_fn: callable = create_aya_dataset_mixture,
     **mixture_rate_cfg_map: MixtureRateConfig
 ) -> seqio.Mixture:
     assert AYA_TEMPLATED_DATASETS.issuperset(datasets)
     sub_mixtures = []
     
     for dataset_name in datasets:
-        mixture = create_aya_dataset_mixture(
+        mixture = mixture_fn(
             AYA_LANGUAGES,
             dataset_name=dataset_name,
             mixture_rate=rate_num_examples
@@ -581,33 +585,21 @@ def add_aya_templated_task(
 
 @gin.register
 def add_aya_collection_task(
-    human_mixture_cfg: MixtureRateConfig = MixtureRateConfig(),
-    translated_mixture_cfg: MixtureRateConfig = MixtureRateConfig(),
-    templated_mixture_cfg: MixtureRateConfig = MixtureRateConfig()
+    **mixture_rate_cfg_map: MixtureRateConfig
 ) -> seqio.Mixture:
     
     if task_or_mix_exists("aya_collection"):
         return seqio.MixtureRegistry.get("aya_collection")
     
-    aya_human_mixture = add_aya_human_task()
-    aya_translated_mixture = add_aya_translated_task()
-    aya_templated_mixture = add_aya_templated_task()
+    sub_mixtures = []
 
-    # for task in TevaTasks.get_aya_collection_tasks():
-    #     task_name = default_task_factory[task]().name
+    for task in TevaTasks.get_aya_collection_tasks():
+        task_name = default_task_factory[task]().name
+        mixture_rate_cfg = mixture_rate_cfg_map.get(f"{task_name}_mixture_cfg", MixtureRateConfig())
+        sub_mixtures.append((task_name, get_rate(task_name, **asdict(mixture_rate_cfg))))
 
-    # In SeqIO, submixtures must carry float rates not funcs
-    return seqio.MixtureRegistry.add(
-        "aya_collection",
-        [
-            (aya_human_mixture, get_rate(
-                aya_human_mixture, **asdict(human_mixture_cfg))),
-            (aya_templated_mixture, get_rate(
-                aya_templated_mixture, **asdict(templated_mixture_cfg))),
-            (aya_translated_mixture, get_rate(
-                aya_translated_mixture, **asdict(translated_mixture_cfg)))
-        ],
-    )
+    return seqio.MixtureRegistry.add("aya_collection", tasks=sub_mixtures)
+
 
 # TODO: @theyorubayesian- pcm_Latn isn't included when downloading xP3x. Fix. 
 @gin.register
@@ -885,6 +877,7 @@ def add_dialog_submix(flan_collection_statistics: FlanCollectionStatistics | Non
     )
 
 
+@gin.register
 def add_flan_collection_task(**mixture_rate_cfg_map: MixtureRateConfig) -> seqio.Mixture:
     """
     This is a mixture of the following Flan tasks:
@@ -1024,14 +1017,31 @@ default_task_factory: dict[TevaTasks, callable] = {
 }
 
 
+def get_task_func_from_factory(key: str | TevaTasks) -> callable:
+    if isinstance(key, str):
+        _key = TevaTasks[key.upper()]
+        return default_task_factory[_key]
+    return default_task_factory[key]
+
+
 def setup_tasks(
     tasks: Sequence[TevaTasks] | Literal["all"],
-    **kwargs: callable
+    **kwargs: Union[callable, MixtureRateConfig],
 ):
     """
     kwargs may contain gin-configured task functions or MixtureRateConfig
     """
-    configured_task_factory = {k: v for k, v in kwargs.items() if isinstance(k, TevaTasks)}
+    configured_task_factory = {}
+    for k, v in kwargs.items():
+        if isinstance(k, str):
+            try:
+                k = TevaTasks[k.upper()]
+            except KeyError:
+                continue
+    
+        if isinstance(k, TevaTasks):
+            configured_task_factory[k] = v
+    
     default_task_factory.update(configured_task_factory)
 
     if tasks == "all":

@@ -1,18 +1,17 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from functools import partial
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
 
 import gin
 import seqio
 from t5.data.utils import rate_num_examples
 
-from teva.teva_tasks import TevaTasks
-
 
 @gin.register
 @dataclass
 class MixtureRateConfig:
+    rate: float | None = None
     scale: float = 1.0
     temperature: float = 1.0
     maximum: Optional[float] = None
@@ -20,10 +19,14 @@ class MixtureRateConfig:
 
 def get_rate(
     mixture_or_task: str | seqio.Task | seqio.Mixture,
+    rate: float | None = None,
     scale: float = 1.0,
     temperature: float = 1.0,
     maximum: int | float | None  = None,
 ) -> callable | float:
+    if rate:
+        return rate
+    
     if isinstance(mixture_or_task, seqio.Task) or \
         mixture_or_task in seqio.TaskRegistry.names():
 

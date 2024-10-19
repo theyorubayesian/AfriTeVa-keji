@@ -27,24 +27,21 @@
 
 from __gin__ import dynamic_registration
 
-import __main__ as train_script
+import t5x.train as train_script
 import seqio
 from t5x import gin_utils
 from t5x import partitioning
 from t5x import utils
 from t5x import trainer
 
+from teva import teva_tasks as TT
 from teva import tasks as teva_tasks
-
-## 
-TEVA_TASK = %gin.REQUIRED
-##
 
 # Must be overridden
 MODEL_DIR = %gin.REQUIRED
 MIXTURE_OR_TASK_NAME = %gin.REQUIRED
 TASK_FEATURE_LENGTHS = %gin.REQUIRED
-MIXTURE_OR_TASK_MODULE = %gin.REQUIRED
+# MIXTURE_OR_TASK_MODULE = %gin.REQUIRED
 TRAIN_STEPS = %gin.REQUIRED
 INITIAL_CHECKPOINT_PATH = %gin.REQUIRED
 WARMUP_STEPS = %gin.REQUIRED
@@ -70,9 +67,6 @@ JSON_WRITE_N_RESULTS = None  # Write all inferences.
 USE_HARDWARE_RNG = False
 # None always uses faster, hardware RNG
 RANDOM_SEED = None
-
-# DEPRECATED: Import the this module in your gin file.
-MIXTURE_OR_TASK_MODULE = None
 
 # `LOSS_NORMALIZING_FACTOR`: When fine-tuning a model that was pre-trained
 # using Mesh Tensorflow (e.g. the public T5 / mT5 / ByT5 models), this should be
@@ -119,7 +113,6 @@ train/utils.DatasetConfig:
   seed = None  # use a new seed each run/restart
   use_cached = %USE_CACHED_TASKS
   pack = True
-  module = %MIXTURE_OR_TASK_MODULE
 
 train_eval/utils.DatasetConfig:
   mixture_or_task_name = %MIXTURE_OR_TASK_NAME
@@ -130,7 +123,6 @@ train_eval/utils.DatasetConfig:
   seed = 42
   use_cached = %USE_CACHED_TASKS
   pack = True
-  module = %MIXTURE_OR_TASK_MODULE
 
 infer_eval/utils.DatasetConfig:
   mixture_or_task_name = %MIXTURE_OR_TASK_NAME
@@ -141,7 +133,6 @@ infer_eval/utils.DatasetConfig:
   seed = 42
   use_cached = %USE_CACHED_TASKS
   pack = False
-  module = %MIXTURE_OR_TASK_MODULE
 
 utils.CheckpointConfig:
   restore = @utils.RestoreCheckpointConfig()
@@ -165,34 +156,77 @@ utils.create_learning_rate_scheduler:
   base_learning_rate = %LEARNING_RATE
   warmup_steps = %WARMUP_STEPS
 
-teva_tasks.main:
-  tasks = %TEVA_TASK
-  aya = @teva_tasks.add_aya_task
+teva_tasks.create_aya_dataset_mixture:
+  english_mixture_cfg = @downsampled_languages/teva_tasks.MixtureRateConfig()
+  central_kanuri_mixture_cfg = @downsampled_languages/teva_tasks.MixtureRateConfig()
+  # ----------------------------------------
+  # Similar proportions to African languages
+  # ----------------------------------------
+  # french_mixture_config = @downsampled_languages/teva_tasks.MixtureRateConfig()
+  # portuguese_mixture_config = @downsampled_languages/teva_tasks.MixtureRateConfig()
+  # ----------------------------------------
+  bemba_mixture_cfg = @upsampled_languages/teva_tasks.MixtureRateConfig()
+  fon_mixture_cfg = @upsampled_languages/teva_tasks.MixtureRateConfig()
+  twi_mixture_cfg = @upsampled_languages/teva_tasks.MixtureRateConfig()
 
-teva_tasks.add_aya_task:
+upsampled_languages/teva_tasks.MixtureRateConfig:
+  scale = 5.0
+
+downsampled_languages/teva_tasks.MixtureRateConfig:
+  rate = 0.2
+
+teva_tasks.add_aya_human_task:
+  mixture_fn = @teva_tasks.create_aya_dataset_mixture
+
+teva_tasks.add_aya_templated_task:
+  mixture_fn = @teva_tasks.create_aya_dataset_mixture
+
+teva_tasks.add_aya_translated_task:
+  mixture_fn = @downsample_translated/teva_tasks.create_aya_dataset_mixture
+
+downsample_translated/teva_tasks.create_aya_dataset_mixture:
+  default_mixture_cfg = @downsample_translated/teva_tasks.MixtureRateConfig()
+
+downsample_translated/teva_tasks.MixtureRateConfig:
+  maximum = 3000
+
+teva_tasks.setup_tasks:
+  IFT = @teva_tasks.add_instruction_ft_tasks
+  XP3X = @teva_tasks.add_xp3x_task
+  HUMAN_AYA = @teva_tasks.add_aya_human_task
+  TEMPLATED_AYA = @teva_tasks.add_aya_templated_task
+  TRANSLATED_AYA = @teva_tasks.add_aya_translated_task
+
+teva_tasks.add_instruction_ft_tasks:
   human_mixture_cfg = @human/teva_tasks.MixtureRateConfig()
   templated_mixture_cfg = @templated/teva_tasks.MixtureRateConfig()
   translated_mixture_cfg = @translated/teva_tasks.MixtureRateConfig()
 
 human/teva_tasks.MixtureRateConfig:
-  scale = 1.0
-  temperature = 1.0
-  maximum = 1.0
+  rate = 0.25
 
 templated/teva_tasks.MixtureRateConfig:
-  scale = 1.0
-  temperature = 1.0
-  maximum = 1.0
+  rate = 0.3
 
 translated/teva_tasks.MixtureRateConfig:
-  scale = 1.0
-  temperature = 1.0
-  maximum = 1.0
+  rate = 0.45
 
-teva_tasks.add_aya_templated_task:
-  afriqa_inst_mixture_cfg = @afriqa_inst/teva_tasks.MixtureRateConfig()
+teva_tasks.add_xp3x_task:
+  eng_Latn_mixture_cfg = @downsampled_languages/teva_tasks.MixtureRateConfig()
+  fra_Latn_mixture_cfg = @downsampled_languages/teva_tasks.MixtureRateConfig()
+  hau_Latn_mixture_cfg = @downsampled_languages/teva_tasks.MixtureRateConfig()
 
-afriqa_inst/teva_tasks.MixtureRateConfig:
-  scale = 1.0
-  temperature = 1.0
-  maximum = 1.0
+teva_tasks.add_dpi_templated_tasks:
+  octopack_osst_mixgture_cfg = @DPI/teva_tasks.MixtureRateConfig()
+  oig_small_chip2_mixture_cfg = @DPI/teva_tasks.MixtureRateConfig()
+  tasksource_instruct_mixture_cfg = @DPI/teva_tasks.MixtureRateConfig()
+
+teva_tasks.add_flan_collection_task:
+  flan2021_submix_mixture_cfg = @DPI/teva_tasks.MixtureRateConfig()
+  flan_cot_submix_mixture_cfg = @DPI/teva_tasks.MixtureRateConfig()
+  flan_dialog_submix_mixture_cfg = @DPI/teva_tasks.MixtureRateConfig()
+  flan_niv2_submix_mixture_cfg = @DPI/teva_tasks.MixtureRateConfig()
+  flan_t0_submix_mixture_cfg = @DPI/teva_tasks.MixtureRateConfig()
+
+DPI/teva_tasks.MixtureRateConfig:
+  maximum = 20000
