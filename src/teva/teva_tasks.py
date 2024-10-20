@@ -7,7 +7,7 @@ import gin
 @enum.unique
 class TevaTasks(enum.Enum):
     WURA = "wura"
-    IFT = "instruction_finetuning"
+    IFT_MIXTURE = "instruction_finetuning"
     SFT = "supervised_finetuning"
     EVAL = "eval"
     # ----
@@ -32,11 +32,11 @@ class TevaTasks(enum.Enum):
     OCTOPACK_OSST = "octopack_osst"
     OIG_SMALL_CHIP2 = "oig_small_chip2"
     TASKSOURCE_INSTRUCT = "tasksource_instruct"
-    FLAN_NIV2_SUBMIX = "flan_niv2_submix"
+    FLAN_NIV2_SUBMIX = "niv2_submix"
     FLAN2021_SUBMIX = "flan2021_submix"
-    FLAN_COT_SUBMIX = "flan_cot_submix"
-    FLAN_DIALOG_SUBMIX = "flan_dialog_submix"
-    FLAN_T0_SUBMIX = "flan_t0_submix"
+    FLAN_COT_SUBMIX = "cot_submix"
+    FLAN_DIALOG_SUBMIX = "dialog_submix"
+    FLAN_T0_SUBMIX = "t0_submix"
     FLAN_COLLECTION = "flan_collection"
     DPI_TEMPLATED = "dpi_templated"
     TEMPLATED_IFT = "templated_ift"
@@ -103,5 +103,7 @@ class TevaTasks(enum.Enum):
         return frozenset(tasks)
     
     @classmethod
-    def get_instruction_tasks(cls) -> frozenset["TevaTasks"]:
-        return cls.get_templated_instruction_tasks(flatten_mixtures=True) | cls.get_aya_collection_tasks()
+    def get_instruction_tasks(cls, flatten_mixtures: bool = True) -> frozenset["TevaTasks"]:
+        if flatten_mixtures:
+            return cls.get_templated_instruction_tasks(flatten_mixtures=flatten_mixtures) | cls.get_aya_collection_tasks()
+        return cls.TEMPLATED_IFT | cls.get_aya_collection_tasks()
