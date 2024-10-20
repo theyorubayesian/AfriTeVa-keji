@@ -178,7 +178,6 @@ def _main(argv: Sequence[str]):
         )
 
         setup_tasks_using_gin(tasks=FLAGS.tasks_to_load)
-        exit()
 
         # TODO: @theyorubayesian: Store state using alternative methods if necessary.
         step, state = train_using_gin()

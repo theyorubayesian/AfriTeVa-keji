@@ -191,7 +191,7 @@ downsample_translated/teva_tasks.MixtureRateConfig:
   maximum = 3000
 
 teva_tasks.setup_tasks:
-  IFT = @teva_tasks.add_instruction_ft_tasks
+  IFT_MIXTURE = @teva_tasks.add_instruction_ft_tasks
   XP3X = @teva_tasks.add_xp3x_task
   HUMAN_AYA = @teva_tasks.add_aya_human_task
   TEMPLATED_AYA = @teva_tasks.add_aya_templated_task
@@ -223,10 +223,10 @@ teva_tasks.add_dpi_templated_tasks:
 
 teva_tasks.add_flan_collection_task:
   flan2021_submix_mixture_cfg = @DPI/teva_tasks.MixtureRateConfig()
-  flan_cot_submix_mixture_cfg = @DPI/teva_tasks.MixtureRateConfig()
-  flan_dialog_submix_mixture_cfg = @DPI/teva_tasks.MixtureRateConfig()
-  flan_niv2_submix_mixture_cfg = @DPI/teva_tasks.MixtureRateConfig()
-  flan_t0_submix_mixture_cfg = @DPI/teva_tasks.MixtureRateConfig()
+  cot_submix_mixture_cfg = @DPI/teva_tasks.MixtureRateConfig()
+  dialog_submix_mixture_cfg = @DPI/teva_tasks.MixtureRateConfig()
+  niv2_submix_mixture_cfg = @DPI/teva_tasks.MixtureRateConfig()
+  t0_submix_mixture_cfg = @DPI/teva_tasks.MixtureRateConfig()
 
 DPI/teva_tasks.MixtureRateConfig:
   maximum = 20000
