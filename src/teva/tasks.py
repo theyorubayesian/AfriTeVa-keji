@@ -16,7 +16,7 @@ from t5.evaluation.metrics import accuracy, bleu, rouge, squad as squad_metrics
 
 from teva.constants import *
 from teva.metrics import chrf, weighted_multiclass_f1
-from teva.mixture_utils import get_rate, MixtureRateConfig, rate_num_examples_for_mixtures
+from teva.mixture_utils import get_rate, MixtureRateConfig
 from teva.preprocessors import (
     afriqa,
     create_news_classification_example,
@@ -446,9 +446,9 @@ def create_aya_dataset_mixture(
     if task_or_mix_exists(f"{prefix}_aya"):
         return seqio.MixtureRegistry.get(f"{prefix}_aya")
 
-    DATASET_PATH = Template(os.path.join(DATA_DIR, f"aya_african_subset/data/{dataset_name}", "${split}/${language}.jsonl"))
-
-    AYA_DATASET_STATISTICS = get_dataset_statistics(os.path.join(DATA_DIR, "aya_african_subset/statistics.json"))
+    DATASET_PATH = Template(os.path.join(DATA_DIR, f"aya/{dataset_name}", "${split}/${language}.jsonl"))
+    
+    AYA_DATASET_STATISTICS = get_dataset_statistics(os.path.join(DATA_DIR, "aya/statistics.json"))
     
     TEXT_SPEC = {
         field: tf.TensorSpec([], tf.string, name=field) 
@@ -469,15 +469,17 @@ def create_aya_dataset_mixture(
     parse_aya_jsonline = partial(jsonline_to_dict, specs=AYA_SPEC)
 
     aya_tasks = []
-    for language in languages:
+    for language in languages:        
         sources = {
-            split: DATASET_PATH.substitute(split="train", language=language)
+            split: DATASET_PATH.substitute(split=split, language=language)
             for split in ["train", "validation", "test"]
             if tf.io.gfile.exists(DATASET_PATH.substitute(split=split, language=language))
         }
+        
         if not sources:
             continue
-
+        
+        logging.debug(sources)
         task_name = normalize(f"{language}_{prefix}_aya")
 
         if not task_or_mix_exists(task_name):
@@ -512,7 +514,6 @@ def create_aya_dataset_mixture(
         tasks=aya_tasks,
         default_rate=rate_num_examples
     )
-
     return mixture
 
 
@@ -601,7 +602,6 @@ def add_aya_collection_task(
     return seqio.MixtureRegistry.add("aya_collection", tasks=sub_mixtures)
 
 
-# TODO: @theyorubayesian- pcm_Latn isn't included when downloading xP3x. Fix. 
 @gin.register
 def add_xp3x_task(
     languages: Sequence[str] = XP3X_LANGUAGE_CODES,
