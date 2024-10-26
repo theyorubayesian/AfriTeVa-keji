@@ -64,10 +64,10 @@
 
     while [ "$1" != "" ]; do
         # Collect any additional gin configs and pass to action command
-        [[ $1 == --gin* ]] && other_configs+=($1) && shift && continue
+        [[ $1 == --gin* ]] && other_configs+=("$1") && shift && continue
 
         # Commands that start with --nig. are stripped and passed to the action script directly
-        [[ $1 == --nig.* ]] && suffix=${1#*nig.} && other_configs+=("--${suffix}") && shift && continue
+        [[ $1 == --nig.* ]] && suffix=${1#*nig.} && echo "$suffix" && other_configs+=("--${suffix}") && echo "${other_configs[@]}" && shift && continue
 
         case $1 in
             -a | --action )                 shift
@@ -164,38 +164,39 @@
             --run_mode="train" \
             --gin_file="config/models/t5_1_1/$model_size.gin" \
             --gin_file="config/runs/t5_1_1/pretrain.gin" \
-            --gin.MIXTURE_OR_TASK_NAME=\"${task}\" \
+            --gin.MIXTURE_OR_TASK_NAME=\""${task}"\" \
             --gin.TASK_FEATURE_LENGTHS="${feature_lengths}" \
             --gin.TASK_FEATURE_LENGTHS="${feature_lengths}" \
-            --gin.WARMUP_STEPS=${warmup_steps} \
-            --gin.LEARNING_RATE=\"${learning_rate}\" \
-            --gin.LEARNING_RATE_SCHEDULE=\"${learning_rate_schedule}\" \
-            --gin.TRAIN_STEPS=${train_steps} \
-            --gin.BATCH_SIZE=${batch_size} \
-            --gin.trainer.Trainer.num_microbatches=${num_microbatches} \
-            --gin.train.eval_period=${eval_period} \
-            --gin.utils.SaveCheckpointConfig.period=${checkpoint_period} \
-            --gin.MODEL_DIR=\"${output_dir}\" \
+            --gin.WARMUP_STEPS="${warmup_steps}" \
+            --gin.LEARNING_RATE=\""${learning_rate}"\" \
+            --gin.LEARNING_RATE_SCHEDULE=\""${learning_rate_schedule}"\" \
+            --gin.TRAIN_STEPS="${train_steps}" \
+            --gin.BATCH_SIZE="${batch_size}" \
+            --gin.trainer.Trainer.num_microbatches="${num_microbatches}" \
+            --gin.train.eval_period="${eval_period}" \
+            --gin.utils.SaveCheckpointConfig.period="${checkpoint_period}" \
+            --gin.MODEL_DIR=\""${output_dir}"\" \
             "${other_configs[@]}" \
             --alsologtostderr
             ;;
         finetune)
             set -x;
-            python3 -m t5x.train \
+            python3 -m teva \
+            --run_mode="train" \
             --gin_file="config/models/t5_1_1/$model_size.gin" \
             --gin_file="config/runs/t5_1_1/finetune.gin" \
-            --gin.MIXTURE_OR_TASK_NAME=\"${task}\" \
+            --gin.MIXTURE_OR_TASK_NAME=\""${task}"\" \
             --gin.TASK_FEATURE_LENGTHS="${feature_lengths}" \
-            --gin.WARMUP_STEPS=${warmup_steps} \
-            --gin.LEARNING_RATE=${learning_rate} \
-            --gin.LEARNING_RATE_SCHEDULE=\"${learning_rate_schedule}\" \
-            --gin.TRAIN_STEPS=${train_steps} \
-            --gin.BATCH_SIZE=${batch_size} \
-            --gin.trainer.Trainer.num_microbatches=${num_microbatches} \
-            --gin.INITIAL_CHECKPOINT_PATH=${checkpoint} \
-            --gin.EVAL_PERIOD=${eval_period} \
-            --gin.utils.SaveCheckpointConfig.period=${checkpoint_period} \
-            --gin.MODEL_DIR=\"${output_dir}\" \
+            --gin.WARMUP_STEPS="${warmup_steps}" \
+            --gin.LEARNING_RATE="${learning_rate}" \
+            --gin.LEARNING_RATE_SCHEDULE=\""${learning_rate_schedule}"\" \
+            --gin.TRAIN_STEPS="${train_steps}" \
+            --gin.BATCH_SIZE="${batch_size}" \
+            --gin.trainer.Trainer.num_microbatches="${num_microbatches}" \
+            --gin.INITIAL_CHECKPOINT_PATH="${checkpoint}" \
+            --gin.EVAL_PERIOD="${eval_period}" \
+            --gin.utils.SaveCheckpointConfig.period="${checkpoint_period}" \
+            --gin.MODEL_DIR=\""${output_dir}"\" \
             "${other_configs[@]}" \
             ${no_train_eval+--gin.train.train_eval_dataset_cfg=None} \
             ${no_infer_eval+--gin.train.infer_eval_dataset_cfg=None} \

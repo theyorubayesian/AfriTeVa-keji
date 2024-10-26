@@ -2,6 +2,7 @@
 
 LANGUAGE_PATHS_JSON_URL="https://huggingface.co/datasets/Muennighoff/xP3x/resolve/main/paths.json"
 BASE_XP3X_URL="https://huggingface.co/datasets/CohereForAI/xP3x/resolve/main"
+DOWNLOAD_DIR=""
 
 xP3x_LANGUAGE_CODES_WITH_SCRIPT=(
     "afr_Latn"
@@ -12,7 +13,9 @@ xP3x_LANGUAGE_CODES_WITH_SCRIPT=(
     "run_Latn" "sna_Latn" "som_Latn" "sot_Latn" "ssw_Latn" "swh_Latn"
     "tir_Ethi" "tsn_Latn" "tum_Latn" "twi_Latn" "umb_Latn" "wol_Latn"
     "xho_Latn" "yor_Latn" "zul_Latn" 
+    # --------------
     # Lingua Francas
+    # --------------
     "aeb_Arab" "arb_Arab" "arb_Latn" "arq_Arab" "ary_Arab" "arz_Arab"
     "eng_Latn" "fra_Latn" "por_Latn"
 )
@@ -24,15 +27,15 @@ for code in "${xP3x_LANGUAGE_CODES[@]}"; do
     lang_codes_map["$code"]=1
 done
 
-mkdir -p data/xP3x
+mkdir -p "$DOWNLOAD_DIR"
 
-wget -O data/xP3x/paths.json "$LANGUAGE_PATHS_JSON_URL"
+wget -O "$DOWNLOAD_DIR"/paths.json "$LANGUAGE_PATHS_JSON_URL"
 
 # Filter paths.json for African languages
 language_json_filter=$(printf '%s\n' "${xP3x_LANGUAGE_CODES_WITH_SCRIPT[@]}" | jq -R . | jq -s .)
 xP3x_LANGUAGE_PATHS_MAP=$(
     jq --argjson keys "$language_json_filter" '
-    with_entries(select(.key as $k | $keys | index($k)))' data/xP3x/paths.json
+    with_entries(select(.key as $k | $keys | index($k)))' "$DOWNLOAD_DIR/paths.json"
 )
 
 filter_url() {
@@ -66,13 +69,13 @@ filter_url() {
 
 echo "$xP3x_LANGUAGE_PATHS_MAP" | jq -r 'to_entries[] | "\(.key) \(.value[])"' | while read -r key url; do
     url="$(echo "$url" | sed 's/?/%3F/g' | sed 's/,/%2C/g')"
-    mkdir -p "data/xP3x/${key}"
+    mkdir -p "$DOWNLOAD_DIR/${key}"
 
-    if filter_url "$url"; then
-        wget -x -O "data/xP3x/${key}/${url/"data/${key}/"/}" "${BASE_XP3X_URL}/${url}"
+    if [ "$key" = "pcm_Latn" ]; then
+        # pcm isn't largely translation so no src tgt type dataset
+        wget -x -O "$DOWNLOAD_DIR/${key}/${url/"data/${key}/"/}" "${BASE_XP3X_URL}/${url}"
+    elif filter_url "$url"; then
+        wget -x -O "$DOWNLOAD_DIR/${key}/${url/"data/${key}/"/}" "${BASE_XP3X_URL}/${url}"
         # echo "Downloading $url"
-    else
-        # echo "Skipping $url"
-        :
     fi
 done
