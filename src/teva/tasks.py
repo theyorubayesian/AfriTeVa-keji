@@ -607,8 +607,8 @@ def add_xp3x_task(
     languages: Sequence[str] = XP3X_LANGUAGE_CODES,
     **mixture_rate_cfg_map: MixtureRateConfig
 ) -> seqio.Mixture:
-    if task_or_mix_exists("xP3x"):
-        return seqio.MixtureRegistry.get("xP3x")
+    if task_or_mix_exists("xp3x"):
+        return seqio.MixtureRegistry.get("xp3x")
     
     assert XP3X_LANGUAGE_CODES.issuperset(languages)
 
@@ -624,7 +624,7 @@ def add_xp3x_task(
     xP3x_tasks = []
 
     for language in languages:
-        task_name = f"{language}_xP3x"
+        task_name = f"{language}_xp3x"
 
         if task_or_mix_exists(task_name):
             continue
@@ -656,7 +656,7 @@ def add_xp3x_task(
         xP3x_tasks.append((task_name, mixture_rate))
     
     mixture = seqio.MixtureRegistry.add(
-        name="xP3x",
+        name="xp3x",
         tasks=xP3x_tasks,
         default_rate=rate_num_examples
     )
@@ -669,7 +669,7 @@ def add_octopack_osst(
     **mixture_rate_cfg_map: MixtureRateConfig
 ) -> seqio.Mixture:
     if task_or_mix_exists("octopack_osst"):
-        return seqio.TaskRegistry.get("octopack_osst")
+        return seqio.MixtureRegistry.get("octopack_osst")
     
     assert OCTOPACK_LANGUAGES.issuperset(languages)
 

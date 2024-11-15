@@ -7,7 +7,7 @@ import gin
 @enum.unique
 class TevaTasks(enum.Enum):
     WURA = "wura"
-    IFT_MIXTURE = "instruction_finetuning"
+    IFT_MIXTURE = "ift_mixture"
     SFT = "supervised_finetuning"
     EVAL = "eval"
     # ----
