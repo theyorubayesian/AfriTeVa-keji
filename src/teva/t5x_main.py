@@ -13,9 +13,6 @@ import tensorflow as tf
 from dotenv import load_dotenv
 load_dotenv()
 
-from t5x import config_utils
-from t5x import gin_utils
-
 from .tasks import TevaTasks
 
 
@@ -166,6 +163,7 @@ def _main(argv: Sequence[str]):
     if FLAGS.run_mode == RunMode.TRAIN:
         from teva.tasks import setup_tasks
         from t5x.train import train, _DEFAULT_GIN_SEARCH_PATHS
+        from t5x import gin_utils
 
         setup_tasks_using_gin = gin.configurable(setup_tasks)
         train_using_gin = gin.configurable(train)
@@ -185,5 +183,7 @@ def _main(argv: Sequence[str]):
     jax.effects_barrier()
 
 
-if __name__ == "__main__":    
+if __name__ == "__main__": 
+    from t5x import config_utils
+       
     config_utils.run(main)
