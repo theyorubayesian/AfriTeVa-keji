@@ -1,6 +1,7 @@
 from typing import Iterator, Optional
 
 import seqio
+import torch
 import tensorflow as tf
 from torch.utils.data import IterableDataset
 
@@ -13,8 +14,9 @@ class SeqioDataset:
         def __init__(self, iterator: tf.data.NumpyIterator):
             self.iterator = iterator
         
-        def __iter__(self) -> Iterator:
-            return iter(self.iterator)
+        def __iter__(self) -> Iterator[torch.Tensor]:
+            for numpy_item in iter(self.iterator):
+                yield torch.from_numpy(numpy_item)
     
     def __init__(self, task: TevaTasks, splits: list[str] = None, gin_file: Optional[str] = None, **seqio_kwargs):
         self._iterator_dict = self._get_iterator(task, splits, gin_file, **seqio_kwargs)
@@ -25,6 +27,10 @@ class SeqioDataset:
             ds_iterator = self._iterator_dict[split]
             self._datasets[split] = self.IterableSeqioDataset(ds_iterator)
         return self._datasets[split]
+    
+    @property
+    def splits(self):
+        return list(self._iterator_dict.keys())
     
     @staticmethod
     def _get_iterator(task: TevaTasks, splits: list[str] = None, gin_file: Optional[str] = None, **seqio_kwargs) -> dict[str, tf.data.NumpyIterator]:
