@@ -1,5 +1,6 @@
 from typing import Iterator, Optional
 
+import numpy as np
 import seqio
 import torch
 import tensorflow as tf
@@ -16,7 +17,14 @@ class SeqioDataset:
         
         def __iter__(self) -> Iterator[torch.Tensor]:
             for numpy_item in iter(self.iterator):
-                yield torch.from_numpy(numpy_item)
+                yield self.tensorize(numpy_item)
+
+        @staticmethod
+        def tensorize(item: dict[str, np.ndarray | str | bytes]):
+            for key, value in item.items():
+                if isinstance(value, np.ndarray):
+                    item[key] = torch.from_numpy(value.copy())
+            return item
     
     def __init__(self, task: TevaTasks, splits: list[str] = None, gin_file: Optional[str] = None, **seqio_kwargs):
         self._iterator_dict = self._get_iterator(task, splits, gin_file, **seqio_kwargs)
