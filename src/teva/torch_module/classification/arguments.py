@@ -70,5 +70,7 @@ class ClassificationDataArguments(DataArguments):
     )
 
     def __post_init__(self):
+        super().__post_init__()
+        
         if self.val_max_target_length is None:
             self.val_max_target_length = self.max_target_length

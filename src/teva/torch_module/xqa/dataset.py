@@ -14,16 +14,13 @@ def preprocess_function(
     data_args: xQADataArguments,
     mode: Literal["train", "eval", "test"] = "train",
 ) -> BatchEncoding:
-    def _preprocess(example: dict[str, Any]) -> dict[str, Any]:
-        example[data_args.question_column] = example[data_args.question_column].strip()
-        example[data_args.context_column] = example[data_args.context_column].strip()
-        return example
-
-    dataset = dataset.map(_preprocess).filter(lambda row: len(row["answers"]["text"]) > 0)
+    useful_idxs = {idx for idx, row in enumerate(dataset["answers"]) if len(row["text"]) > 0}
+    questions = [q.strip() for idx, q in enumerate(dataset[data_args.question_column]) if idx in useful_idxs]
+    contexts = [c.strip() for idx, c in enumerate(dataset[data_args.context_column]) if idx in useful_idxs]
 
     model_inputs = tokenizer(
-        data_args.question_column,
-        data_args.context_column,
+        questions,
+        contexts,
         max_length=data_args.max_seq_length,
         padding=data_args.padding,
         stride=data_args.doc_stride,
@@ -34,7 +31,7 @@ def preprocess_function(
 
     offset_mapping = model_inputs.pop("offset_mapping")
     sample_map = model_inputs["overflow_to_sample_mapping"]
-    answers = dataset["answers"]
+    answers = [answer for idx, answer in enumerate(dataset[data_args.answer_column]) if idx in useful_idxs]
 
     labels = []
 

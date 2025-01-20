@@ -171,13 +171,14 @@ download_tasksource_instruct() {
     done
 }
 
+download_afriqa_passages() {
+    cd data/afriqa
+    git sparse-checkout init --cone
+    git sparse-checkout set data
+}
+
 # A subset of the Flan collection 
 # No code datasets included.
 # Sample a maximum of 20K for each of these sources.
 
-# ShareGPT - Not Included
-export HUGGINGFACE_CLI_TOKEN="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"
-# download_xp3x_filtered /share/jimmylin/collections/xP3x
-# download_octopack_osst /share/jimmylin/collections/octopack_osst
-# download_oig_small_chip2 /share/jimmylin/collections/OIG-small-chip2
-download_tasksource_instruct /share/jimmylin/collections/tasksource_instruct
+
