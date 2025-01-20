@@ -2,3 +2,6 @@
 	path = t5x
 	url = https://github.com/google-research/t5x.git
 	branch = main
+[submodule "data/afriqa"]
+	path = data/afriqa
+	url = https://github.com/masakhane-io/afriqa.git
