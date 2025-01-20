@@ -2,12 +2,12 @@ import numpy as np
 from evaluate import EvaluationModule, load
 from transformers import EvalPrediction, PreTrainedTokenizer
 
-from teva.torch_module.translation.arguments import DataTrainingArguments
+from teva.torch_module.translation.arguments import TranslationDataArguments
 
 
 def preprocess_function(
     examples: list[dict],
-    data_args: DataTrainingArguments,
+    data_args: TranslationDataArguments,
     tokenizer: PreTrainedTokenizer,
 ) -> dict[str, list[str]]:
     prefix = data_args.source_prefix if data_args.source_prefix is not None else ""

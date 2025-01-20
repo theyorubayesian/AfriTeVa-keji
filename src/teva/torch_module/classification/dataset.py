@@ -1,9 +1,9 @@
 from typing import Literal
 
 from sklearn import metrics
-from transformers import AutoTokenizer, EvalPrediction
+from transformers import EvalPrediction, PreTrainedTokenizerBase
 
-from teva.torch_module.classification.arguments import DataTrainingArguments
+from teva.torch_module.classification.arguments import ClassificationDataArguments
 
 MASAKHANEWS_LABELS = ["business", "entertainment", "health", "politics", "religion", "sports", "technology"]
 MASAKHANEWS_LABELS_MAP = {idx: label for idx, label in enumerate(MASAKHANEWS_LABELS)}
@@ -11,8 +11,8 @@ MASAKHANEWS_LABELS_MAP = {idx: label for idx, label in enumerate(MASAKHANEWS_LAB
 
 def preprocess_function(
     examples: list[dict],
-    data_args: DataTrainingArguments,
-    tokenizer: AutoTokenizer,
+    data_args: ClassificationDataArguments,
+    tokenizer: PreTrainedTokenizerBase,
 ):
     prefix = data_args.source_prefix if data_args.source_prefix is not None else ""
     padding = "max_length" if data_args.pad_to_max_length else False
@@ -34,7 +34,7 @@ def preprocess_function(
     return model_inputs
 
 
-def compute_classification_metrics(p: EvalPrediction, tokenizer: AutoTokenizer):
+def compute_classification_metrics(p: EvalPrediction, tokenizer: PreTrainedTokenizerBase):
     predictions, labels = p
 
     decoded_predictions = tokenizer.batch_decode(predictions, skip_special_tokens=True)

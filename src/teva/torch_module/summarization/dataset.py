@@ -5,7 +5,7 @@ from evaluate import load, EvaluationModule
 from transformers import EvalPrediction, PreTrainedTokenizer
 
 from teva.torch_module.dataset import DataMixture
-from teva.torch_module.summarization.arguments import DataTrainingArguments
+from teva.torch_module.summarization.arguments import SummarizationDataArguments
 
 
 def get_metrics():
@@ -16,7 +16,7 @@ def get_metrics():
 
 def preprocess_function(
     examples: list[dict],
-    data_args: DataTrainingArguments,
+    data_args: SummarizationDataArguments,
     tokenizer: PreTrainedTokenizer,
 ) -> dict[str, list[str]]:
     prefix = data_args.source_prefix if data_args.source_prefix is not None else ""
@@ -65,7 +65,8 @@ def postprocess_text(preds, labels):
 def compute_metrics(
     eval_preds: EvalPrediction,
     metric: EvaluationModule,
-    tokenizer: PreTrainedTokenizer):
+    tokenizer: PreTrainedTokenizer
+):
     preds, labels = eval_preds
     if isinstance(preds, tuple):
         preds = preds[0]
@@ -89,7 +90,7 @@ def compute_metrics(
     return result
 
 
-def dataset_provider(data_args: DataTrainingArguments):
+def dataset_provider(data_args: SummarizationDataArguments):
     configs = data_args.dataset_config_name.split(",")
     if len(configs) > 1:
         ds = {
