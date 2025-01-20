@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader
 from transformers import Seq2SeqTrainer
 from transformers.trainer_utils import has_length
 
-from teva.torch.dataset import MixtureSampler
+from teva.torch_module.dataset import MixtureSampler
 
 
 def get_worker_shard(

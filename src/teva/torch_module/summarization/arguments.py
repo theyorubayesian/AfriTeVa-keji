@@ -3,7 +3,7 @@ from typing import Optional
 
 from transformers import Seq2SeqTrainingArguments
 
-from teva.torch.arguments import ModelArguments
+from teva.torch_module.arguments import ModelArguments
 
 
 @dataclass

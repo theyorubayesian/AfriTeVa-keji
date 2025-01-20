@@ -1,9 +1,9 @@
 import functools
 import logging
 
-from teva.torch.train import main
-from teva.torch.translation.arguments import DataTrainingArguments, ModelArguments
-from teva.torch.translation.dataset import compute_metrics, get_metrics, preprocess_function
+from teva.torch_module.train import main
+from teva.torch_module.translation.arguments import DataTrainingArguments, ModelArguments
+from teva.torch_module.translation.dataset import compute_metrics, get_metrics, preprocess_function
 
 logger = logging.getLogger(__name__)
 

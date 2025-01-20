@@ -2,7 +2,7 @@ import numpy as np
 from evaluate import EvaluationModule, load
 from transformers import EvalPrediction, PreTrainedTokenizer
 
-from teva.torch.translation.arguments import DataTrainingArguments
+from teva.torch_module.translation.arguments import DataTrainingArguments
 
 
 def preprocess_function(

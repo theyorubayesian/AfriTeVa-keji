@@ -14,10 +14,10 @@ from t5.data.preprocessors import span_corruption, summarize
 from t5.data.utils import rate_num_examples
 from t5.evaluation.metrics import accuracy, bleu, rouge, squad as squad_metrics
 
-from teva.constants import *
-from teva.metrics import chrf, weighted_multiclass_f1
-from teva.mixture_utils import get_rate, MixtureRateConfig
-from teva.preprocessors import (
+from teva.t5x_module.constants import *
+from teva.t5x_module.metrics import chrf, weighted_multiclass_f1
+from teva.t5x_module.mixture_utils import get_rate, MixtureRateConfig
+from teva.t5x_module.preprocessors import (
     afriqa,
     create_news_classification_example,
     jsonline_to_dict, 
@@ -26,9 +26,9 @@ from teva.preprocessors import (
     take_subset,
     translate
 )
-from teva.postprocessors import squad_postprocessor
-from teva.teva_tasks import TevaTasks
-from teva.utils import (
+from teva.t5x_module.postprocessors import squad_postprocessor
+from teva.t5x_module.teva_tasks import TevaTasks
+from teva.t5x_module.utils import (
     get_dataset_statistics,
     get_labels,
     get_language_from_code,
@@ -36,7 +36,7 @@ from teva.utils import (
     normalize,
     TaskNotFoundException,
 )
-from teva.vocab import DEFAULT_VOCAB
+from teva.t5x_module.vocab import DEFAULT_VOCAB
 
 load_dotenv()
 

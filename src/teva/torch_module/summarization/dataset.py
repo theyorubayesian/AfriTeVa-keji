@@ -4,8 +4,8 @@ from datasets import load_dataset, DatasetDict as HFDatasetDict
 from evaluate import load, EvaluationModule
 from transformers import EvalPrediction, PreTrainedTokenizer
 
-from teva.torch.dataset import DataMixture
-from teva.torch.summarization.arguments import DataTrainingArguments
+from teva.torch_module.dataset import DataMixture
+from teva.torch_module.summarization.arguments import DataTrainingArguments
 
 
 def get_metrics():

@@ -3,7 +3,7 @@ from typing import Literal
 from sklearn import metrics
 from transformers import AutoTokenizer, EvalPrediction
 
-from teva.torch.classification.arguments import DataTrainingArguments
+from teva.torch_module.classification.arguments import DataTrainingArguments
 
 MASAKHANEWS_LABELS = ["business", "entertainment", "health", "politics", "religion", "sports", "technology"]
 MASAKHANEWS_LABELS_MAP = {idx: label for idx, label in enumerate(MASAKHANEWS_LABELS)}

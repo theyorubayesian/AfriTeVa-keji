@@ -1,10 +1,11 @@
 import functools
 import logging
 
-from teva.torch.train import main
-from teva.torch.arguments import ModelArguments
-from teva.torch.summarization.arguments import DataTrainingArguments, SummarizationTrainingArguments
-from teva.torch.summarization.dataset import compute_metrics, dataset_provider, get_metrics, preprocess_function
+from teva.torch_module.train import main
+from teva.torch_module.arguments import ModelArguments
+from teva.torch_module.summarization.arguments import DataTrainingArguments, SummarizationTrainingArguments
+from teva.torch_module.summarization.dataset import compute_metrics, dataset_provider, get_metrics, preprocess_function
+from teva.torch_module.summarization.trainer import S2STrainer
 
 logger = logging.getLogger(__name__)
 
@@ -17,4 +18,5 @@ if __name__ == "__main__":
         training_arguments=SummarizationTrainingArguments,
         data_arguments=DataTrainingArguments,
         model_arguments=ModelArguments,
+        trainer_cls=S2STrainer
     )

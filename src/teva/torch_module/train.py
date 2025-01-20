@@ -6,7 +6,6 @@ import sys
 from typing import Callable
 
 import numpy as np
-import torch
 import transformers
 from datasets import load_dataset
 from transformers import (
@@ -23,8 +22,8 @@ from transformers import (
 from transformers.trainer_utils import is_main_process
 from transformers.training_args import ParallelMode
 
-from teva.torch.arguments import DataTrainingArguments, ModelArguments
-from teva.torch.utils import check_output_dir
+from teva.torch_module.arguments import DataTrainingArguments, ModelArguments
+from teva.torch_module.utils import check_output_dir
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +34,7 @@ def main(
     training_arguments: type[Seq2SeqTrainingArguments] = Seq2SeqTrainingArguments,
     model_arguments: type[ModelArguments] = ModelArguments,
     data_arguments: type[DataTrainingArguments] = DataTrainingArguments,
+    trainer_cls: type[Seq2SeqTrainer] = Seq2SeqTrainer,
     dataset_provider = None
 ):
     parser = HfArgumentParser((model_arguments, data_arguments, training_arguments))
@@ -50,9 +50,9 @@ def main(
     
     training_args: Seq2SeqTrainingArguments
 
-    is_multi_config_training = len(data_args.dataset_config_name.split(",")) > 1
-    logger.info("Multi-dataset-configuration training enabled")
-    if is_multi_config_training:
+    if data_args.dataset_config_name is not None and \
+        data_args.dataset_config_name.split(",") > 1:
+        logger.info("Multi-dataset-configuration training enabled")
         assert dataset_provider is not None
     
     check_output_dir(training_args)
@@ -225,15 +225,6 @@ def main(
         if training_args.generation_max_length is not None
         else data_args.val_max_target_length
     )
-
-    # Normally, the forward pass of the model returns loss and logits but we need tokens for the our metrics
-    # predict_with_generate wraps generate() to handle this. 
-    trainer_cls = Seq2SeqTrainer
-
-    # TODO: Figure a better way to indicate multi-config training
-    if is_multi_config_training:
-        from teva.torch.summarization.trainer import S2STrainer as Trainer
-        trainer_cls = Trainer
     
     trainer = trainer_cls(
         model=model,
