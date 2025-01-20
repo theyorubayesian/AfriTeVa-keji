@@ -22,41 +22,13 @@ from transformers import (
 from transformers.trainer_utils import is_main_process
 from transformers.training_args import ParallelMode
 
-from teva.torch_module.arguments import DataTrainingArguments, ModelArguments
+from teva.torch_module.arguments import DataArguments, ModelArguments
 from teva.torch_module.utils import check_output_dir
 
 logger = logging.getLogger(__name__)
 
 
-def main(
-    preprocess_function: Callable,
-    compute_metrics_function: Callable,
-    training_arguments: type[Seq2SeqTrainingArguments] = Seq2SeqTrainingArguments,
-    model_arguments: type[ModelArguments] = ModelArguments,
-    data_arguments: type[DataTrainingArguments] = DataTrainingArguments,
-    trainer_cls: type[Seq2SeqTrainer] = Seq2SeqTrainer,
-    dataset_provider = None
-):
-    parser = HfArgumentParser((model_arguments, data_arguments, training_arguments))
-
-    # HF expects local_rank but torch.distributed.launch passed local-rank
-    if sys.argv[1].startswith("--local-rank"):
-        sys.argv[1] = f"--local_rank={sys.argv[1].split('=')[-1]}"
-    
-    if len(sys.argv) == 2 and sys.argv[1].endswith(".json"):
-        model_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[1]))
-    else:
-        model_args, data_args, training_args = parser.parse_args_into_dataclasses()
-    
-    training_args: Seq2SeqTrainingArguments
-
-    if data_args.dataset_config_name is not None and \
-        data_args.dataset_config_name.split(",") > 1:
-        logger.info("Multi-dataset-configuration training enabled")
-        assert dataset_provider is not None
-    
-    check_output_dir(training_args)
-
+def setup_logging(training_args: Seq2SeqTrainingArguments) -> None:
     logging.basicConfig(
         format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
         datefmt="%m/%d/%Y %H:%M:%S",
@@ -80,6 +52,36 @@ def main(
     
     logger.info("Training/evaluation parameters %s", training_args)
 
+
+def main(
+    preprocess_function: Callable,
+    compute_metrics_function: Callable,
+    training_arguments: type[Seq2SeqTrainingArguments] = Seq2SeqTrainingArguments,
+    model_arguments: type[ModelArguments] = ModelArguments,
+    data_arguments: type[DataArguments] = DataArguments,
+    trainer_cls: type[Seq2SeqTrainer] = Seq2SeqTrainer,
+    dataset_provider = None
+):
+    parser = HfArgumentParser((model_arguments, data_arguments, training_arguments))
+
+    # HF expects local_rank but torch.distributed.launch passed local-rank
+    if sys.argv[1].startswith("--local-rank"):
+        sys.argv[1] = f"--local_rank={sys.argv[1].split('=')[-1]}"
+    
+    if len(sys.argv) == 2 and sys.argv[1].endswith(".json"):
+        model_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[1]))
+    else:
+        model_args, data_args, training_args = parser.parse_args_into_dataclasses()
+    
+    training_args: Seq2SeqTrainingArguments
+
+    if data_args.dataset_config_name is not None and \
+        data_args.dataset_config_name.split(",") > 1:
+        logger.info("Multi-dataset-configuration training enabled")
+        assert dataset_provider is not None
+    
+    check_output_dir(training_args)
+    setup_logging(training_args)
     set_seed(training_args.seed)
 
     if dataset_provider is None:
@@ -103,6 +105,7 @@ def main(
         token=model_args.token,
         trust_remote_code=model_args.trust_remote_code,
     )
+
     model = AutoModelForSeq2SeqLM.from_pretrained(
         model_args.model_name_or_path,
         from_tf=".ckpt" in model_args.model_name_or_path,
@@ -170,7 +173,7 @@ def main(
 
         with training_args.main_process_first("Train dataset pre-processing"):
             train_dataset = train_dataset.map(
-                functools.partial(preprocess_function, tokenizer=tokenizer, data_args=data_args),
+                functools.partial(preprocess_function, tokenizer=tokenizer, data_args=data_args, mode="train"),
                 batched=True,
                 num_proc=data_args.preprocessing_num_workers,
                 remove_columns=column_names,
@@ -187,7 +190,7 @@ def main(
         
         with training_args.main_process_first(desc="Validation dataset pre-processing"):
             eval_dataset = eval_dataset.map(
-                functools.partial(preprocess_function, tokenizer=tokenizer, data_args=data_args),
+                functools.partial(preprocess_function, tokenizer=tokenizer, data_args=data_args, mode="eval"),
                 batched=True,
                 num_proc=data_args.preprocessing_num_workers,
                 remove_columns=column_names,
@@ -204,7 +207,7 @@ def main(
         
         with training_args.main_process_first(desc="Prediction dataset pre-processing"):
             predict_dataset = predict_dataset.map(
-                functools.partial(preprocess_function, tokenizer=tokenizer, data_args=data_args),
+                functools.partial(preprocess_function, tokenizer=tokenizer, data_args=data_args, mode="test"),
                 batched=True,
                 num_proc=data_args.preprocessing_num_workers,
                 remove_columns=column_names,

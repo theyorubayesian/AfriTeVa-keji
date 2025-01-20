@@ -1,26 +1,33 @@
-from typing import Literal
+from typing import Any, Literal
 
 from datasets import Dataset
 from evaluate import load as load_metric, EvaluationModule
 from transformers import EvalPrediction, PreTrainedTokenizer, BatchEncoding
 from transformers.trainer_utils import EvalLoopOutput
 
-from teva.torch_module.xqa.arguments import DataTrainingArguments
+from teva.torch_module.xqa.arguments import xQADataArguments
 
 
 def preprocess_function(
     dataset: Dataset,
     tokenizer: PreTrainedTokenizer, 
-    data_args: DataTrainingArguments,
-    mode: Literal["train", "validation", "prediction"] = "train",
+    data_args: xQADataArguments,
+    mode: Literal["train", "eval", "test"] = "train",
 ) -> BatchEncoding:
+    def _preprocess(example: dict[str, Any]) -> dict[str, Any]:
+        example[data_args.question_column] = example[data_args.question_column].strip()
+        example[data_args.context_column] = example[data_args.context_column].strip()
+        return example
+
+    dataset = dataset.map(_preprocess).filter(lambda row: len(row["answers"]["text"]) > 0)
+
     model_inputs = tokenizer(
-        dataset["question"],
-        dataset["context"],
+        data_args.question_column,
+        data_args.context_column,
         max_length=data_args.max_seq_length,
         padding=data_args.padding,
         stride=data_args.doc_stride,
-        truncation=True,
+        truncation="only_second",
         return_overflowing_tokens=True,
         return_offsets_mapping=True
     )
@@ -80,7 +87,7 @@ def preprocess_function(
 
 
 def post_processing_function(
-    examples: Dataset, features: Dataset, outputs: EvalLoopOutput,  data_args: DataTrainingArguments,
+    examples: Dataset, features: Dataset, outputs: EvalLoopOutput,  data_args: xQADataArguments,
     tokenizer: PreTrainedTokenizer, stage="eval",
 ):
     # Decode the predicted tokens.
