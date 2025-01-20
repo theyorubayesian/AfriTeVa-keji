@@ -18,6 +18,7 @@ def preprocess_function(
     examples: list[dict],
     data_args: SummarizationDataArguments,
     tokenizer: PreTrainedTokenizer,
+    **kwargs
 ) -> dict[str, list[str]]:
     prefix = data_args.source_prefix if data_args.source_prefix is not None else ""
 

@@ -13,6 +13,7 @@ def preprocess_function(
     examples: list[dict],
     data_args: ClassificationDataArguments,
     tokenizer: PreTrainedTokenizerBase,
+    **kwargs
 ):
     prefix = data_args.source_prefix if data_args.source_prefix is not None else ""
     padding = "max_length" if data_args.pad_to_max_length else False
