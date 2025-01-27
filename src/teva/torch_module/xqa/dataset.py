@@ -14,9 +14,22 @@ def preprocess_function(
     data_args: xQADataArguments,
     mode: Literal["train", "eval", "test"] = "train",
 ) -> BatchEncoding:
-    useful_idxs = {idx for idx, row in enumerate(dataset["answers"]) if len(row["text"]) > 0}
+    # Filter out examples with 
+    # (a) no answer text 
+    # (b) answer_start index set to None or [-1]
+    # (c) no context provided
+    # TODO: @theyorubayesian - Filter this out before the dataset gets here
+    # Otherwise, labels may not map correctly to the correct index
+    useful_idxs = {
+        idx for idx, (answer, context) in enumerate(zip(dataset[data_args.answer_column], dataset[data_args.context_column]))
+        if answer["text"] is not None and len(answer["text"]) > 0 \
+            and answer["answer_start"] is not None \
+            and len(answer["answer_start"]) > 0 and answer["answer_start"][0] != -1 \
+            and context is not None and len(context) != 0
+    }
     questions = [q.strip() for idx, q in enumerate(dataset[data_args.question_column]) if idx in useful_idxs]
     contexts = [c.strip() for idx, c in enumerate(dataset[data_args.context_column]) if idx in useful_idxs]
+    answers = [answer for idx, answer in enumerate(dataset[data_args.answer_column]) if idx in useful_idxs]
 
     model_inputs = tokenizer(
         questions,
@@ -26,12 +39,11 @@ def preprocess_function(
         stride=data_args.doc_stride,
         truncation="only_second",
         return_overflowing_tokens=True,
-        return_offsets_mapping=True
+        return_offsets_mapping=True,
     )
 
     offset_mapping = model_inputs.pop("offset_mapping")
     sample_map = model_inputs["overflow_to_sample_mapping"]
-    answers = [answer for idx, answer in enumerate(dataset[data_args.answer_column]) if idx in useful_idxs]
 
     labels = []
 
@@ -67,7 +79,7 @@ def preprocess_function(
         labels,
         max_length=data_args.max_target_length,
         padding=data_args.padding,
-        truncation=True
+        truncation=False
     )
 
     # If we are padding here, replace all tokenizer.pad_token_id in the labels by -100 when we want to ignore
@@ -77,7 +89,7 @@ def preprocess_function(
             [(l if l != tokenizer.pad_token_id else -100) for l in label] for label in labels["input_ids"]
         ]
     else:
-        labels = [row["input_ids"] for row in labels]
+        labels = labels["input_ids"]
 
     model_inputs["labels"] = labels
     return model_inputs

@@ -16,17 +16,16 @@ def preprocess_function(
     **kwargs
 ):
     prefix = data_args.source_prefix if data_args.source_prefix is not None else ""
-    padding = "max_length" if data_args.pad_to_max_length else False
 
     inputs = [prefix + (text.lower() if data_args.lowercase else text) for text in examples[data_args.task_config]]
-    model_inputs = tokenizer(inputs, max_length=data_args.max_source_length, padding=padding, truncation=True)
+    model_inputs = tokenizer(inputs, max_length=data_args.max_source_length, padding=data_args.padding, truncation=True)
 
     targets = [MASAKHANEWS_LABELS_MAP[label] for label in examples["label"]]
     labels = tokenizer(text_target=targets, max_length=2, padding="max_length")
 
     # If we are padding here, replace all tokenizer.pad_token_id in the labels by -100 when we want to ignore
     # padding in the loss.
-    if padding == "max_length" and data_args.ignore_pad_token_for_loss:
+    if data_args.padding == "max_length" and data_args.ignore_pad_token_for_loss:
         labels["input_ids"] = [
             [(l if l != tokenizer.pad_token_id else -100) for l in label] for label in labels["input_ids"]
         ]

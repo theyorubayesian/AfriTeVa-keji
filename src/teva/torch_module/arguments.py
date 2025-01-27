@@ -57,7 +57,7 @@ class DataArguments:
         },
     )
     pad_to_max_length: bool = field(
-        default=True,
+        default=False,
         metadata={
             "help": (
                 "Whether to pad all samples to `max_seq_length`. If False, will pad the samples dynamically when"
